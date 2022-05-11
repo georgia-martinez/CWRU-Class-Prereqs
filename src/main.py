@@ -4,44 +4,58 @@ import re
 from subject import *
 from course import *
 
-# Get all subjects
-url = "https://bulletin.case.edu/course-descriptions/"
-
-result = requests.get(url)
-doc = BeautifulSoup(result.text, "html.parser")
-
-tags = doc.find_all("a", href=re.compile("/course-descriptions/[a-z]{4}/"), text=re.compile("\(?[A-Z]{4}\)\s[a-zA-Z]+"))
-
 all_subjects = dict()
 
-for tag in tags:
-    text = tag.string
+def create_subject_map():
+    # Get all subjects
+    url = "https://bulletin.case.edu/course-descriptions/"
 
-    name = re.search(" [a-zA-z /]+", text).group(0)
-    code = re.search("[A-Z]{4}", text).group(0)
+    result = requests.get(url)
+    doc = BeautifulSoup(result.text, "html.parser")
 
-    all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
+    tags = doc.find_all("a", href=re.compile("/course-descriptions/[a-z]{4}/"), text=re.compile("\(?[A-Z]{4}\)\s[a-zA-Z]+"))
 
-# Get all courses for a specific subject
-url = all_subjects["ECSE"].courses_link
+    for tag in tags:
+        text = tag.string
 
-result = requests.get(url)
-doc = BeautifulSoup(result.text, "html.parser")
+        name = re.search(" [a-zA-z /]+", text).group(0)
+        code = re.search("[A-Z]{4}", text).group(0)
 
-tags = doc.find_all("div", class_="courseblock")
+        all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
 
-for tag in tags:
-    # Get course code, name, and credit hours
-    course_header = tag.find("p", class_="courseblocktitle").find("strong").string
+def course_reqs(course_input):
 
+    input_code = re.search("[A-Z]{4}\s[0-9]{3}", course_input).group(0)
+    subject = re.search("[A-Z]{4}", input_code).group(0)
+
+    # Get all courses for a specific subject
+    url = all_subjects[subject].courses_link
+
+    result = requests.get(url)
+    doc = BeautifulSoup(result.text, "html.parser")
+
+    tags = doc.find_all("div", class_="courseblock")
+
+    # Try and find the course code
+    for tag in tags:
+        course_header = tag.find("p", class_="courseblocktitle").find("strong").string
+
+        code = re.search("[A-Z]{4}\s[0-9]{3}", course_header).group(0)
+        code = code.replace("\xa0", " ")  # remove hard spaces
+
+        if code == input_code:
+            break
+
+    if code is None:
+        print("ERROR: Code not found")
+        return
+
+    # Get course name, credit hours, and description
     name = re.search("[A-Z][a-zA-Z\s\(\)\.]*\. ", course_header).group(0)
     name = name[0:name.rindex(".")]
 
-    code = re.search("[A-Z]{4}\s[0-9]{3}", course_header).group(0)
-
     credit_hours = re.search("[0-9]{1} -? ?[0-9]?", course_header).group(0).replace(" ", "")
 
-    # Get course description, prereqs and coreqs
     description = tag.find("p", class_="courseblockdesc").text
     description = description.replace("\n", "")
     description = description.replace("\xa0", " ") # remove hard spaces
@@ -69,3 +83,9 @@ for tag in tags:
     if courses:
         course.coreqs.append(courses)
 
+    return course
+
+if __name__ == "__main__":
+    create_subject_map()
+    course = course_reqs("MATH 319")
+    print(course.info())
