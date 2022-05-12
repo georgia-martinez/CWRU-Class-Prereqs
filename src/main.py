@@ -27,8 +27,6 @@ def create_subject_map():
 
         all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
 
-    all_subjects["EECS"] = all_subjects["CSDS"] # Old course code that sometimes pops up
-
 all_courses = dict()
 
 def find_course_reqs(course_input):
@@ -66,6 +64,8 @@ def find_course_reqs(course_input):
     credit_hours = re.search("[0-9]{1} -? ?[0-9]?", course_header).group(0).replace(" ", "")
 
     description = tag.find("p", class_="courseblockdesc").text
+
+    description = description.replace("EECS", "CSDS")
     description = description.replace("\n", "")
     description = description.replace("\xa0", " ") # remove hard spaces
 
@@ -110,6 +110,8 @@ def find_course_reqs(course_input):
 def create_graph(root):
     graph = nx.DiGraph()
 
+    print(root.code)
+
     nodes = dict()
 
     for key in all_courses:
@@ -142,9 +144,9 @@ def create_graph(root):
 if __name__ == "__main__":
     create_subject_map()
 
-    course_code = "MATH 380"
+    test_code = "CSDS 338"
 
-    find_course_reqs(course_code)
-    course = all_courses[course_code]
+    find_course_reqs(test_code)
+    course = all_courses[test_code]
 
     create_graph(course)
