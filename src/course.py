@@ -9,4 +9,24 @@ class Course:
         self.visited = False
 
     def info(self):
-        print(f"{self.code}\n{self.name}\n{self.credit_hours}\n{self.description}\n{self.prereqs}\n{self.coreqs}")
+        print(self.code)
+        print(self.name)
+        print(self.credit_hours)
+        print(self.description)
+        print(self.reqs_to_string(self.prereqs))
+        print(self.reqs_to_string(self.coreqs))
+
+    def reqs_to_string(self, req_type):
+        final_string = ""
+
+        for req in req_type:
+            req_string = "["
+
+            for course in req.courses:
+                req_string += course.code + " "
+
+            req_string = req_string[:-1] + "]"
+            final_string += req_string
+
+        return final_string
+
