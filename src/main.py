@@ -1,12 +1,10 @@
 from bs4 import BeautifulSoup
 import requests
 import re
-import networkx as nx
-import matplotlib.pyplot as plt
+from pyvis.network import Network
 
 from subject import *
 from course import *
-from node import *
 
 all_subjects = dict()
 
@@ -107,46 +105,41 @@ def find_course_reqs(course_input):
             for coreq in group:
                 find_course_reqs(coreq)
 
-def create_graph(root):
-    graph = nx.DiGraph()
-
-    print(root.code)
-
-    nodes = dict()
+def display_graph(root):
+    net = Network("500px", "500px", directed=True)
 
     for key in all_courses:
-        nodes[key] = Node(all_courses[key])
-        graph.add_node(all_courses[key].code)
+        net.add_node(key)
 
-    stack = [nodes[root.code]]
+    stack = [root]
 
     while stack:
-        curr_node = stack[-1]
+        curr = stack[-1]
         stack.pop()
 
-        if not curr_node.visited:
-            curr_node.visited = True
+        if not curr.visited:
+            curr.visited = True
 
-        for group in curr_node.course.prereqs:
+        for group in curr.prereqs:
             for prereq in group:
-                graph.add_edge(all_courses[prereq].code, curr_node.course.code)
 
-                if not nodes[prereq].visited:
-                    stack.append(nodes[prereq])
+                new_edge = {'from': prereq, 'to': curr.code, 'arrows': 'to'}
 
-    pos = nx.spring_layout(graph)
-    nx.draw_networkx_nodes(graph, pos, node_size=500)
-    nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), edge_color="black")
-    nx.draw_networkx_labels(graph, pos)
+                if new_edge not in net.edges:
+                    net.add_edge(prereq, curr.code)
 
-    plt.show()
+                if not all_courses[prereq].visited:
+                    stack.append(all_courses[prereq])
 
-if __name__ == "__main__":
+    net.show("course_prereqs.html")
+
+def main(string):
     create_subject_map()
 
-    test_code = "CSDS 338"
+    find_course_reqs(string)
+    course = all_courses[string]
 
-    find_course_reqs(test_code)
-    course = all_courses[test_code]
+    display_graph(course)
 
-    create_graph(course)
+if __name__ == "__main__":
+    main("CSDS 338")
