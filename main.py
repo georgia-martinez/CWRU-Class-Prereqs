@@ -150,4 +150,4 @@ def main(string):
     display_graph(course)
 
 if __name__ == "__main__":
-    main("MATH 319")
+    main("MATH 224")
