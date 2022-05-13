@@ -145,9 +145,9 @@ def main(string):
     create_subject_map()
 
     course = new_course(string)
-    course.info()
+    print(course.to_string())
 
     display_graph(course)
 
 if __name__ == "__main__":
-    main("MATH 224")
+    main("MATH 319")

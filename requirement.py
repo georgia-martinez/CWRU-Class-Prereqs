@@ -8,3 +8,6 @@ class Requirement:
     def __init__(self, category):
         self.category = category
         self.courses = []
+
+    def courses_string(self):
+        return [x.code for x in self.courses]

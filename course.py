@@ -8,25 +8,22 @@ class Course:
         self.coreqs = []
         self.visited = False
 
-    def info(self):
-        print(self.code)
-        print(self.name)
-        print(self.credit_hours)
-        print(self.description)
-        print(self.reqs_to_string(self.prereqs))
-        print(self.reqs_to_string(self.coreqs))
+    def to_string(self):
+        info = f"{self.code}: {self.name} ({self.credit_hours} units)\n{self.description}\n"
 
-    def reqs_to_string(self, req_type):
-        final_string = ""
+        if self.prereqs:
+            info += "Prereqs: " + self.reqs_to_string(self.prereqs) + "\n"
 
-        for req in req_type:
-            req_string = "["
+        if self.coreqs:
+            info += "Coreqs: " + self.reqs_to_string(self.prereqs)
 
-            for course in req.courses:
-                req_string += course.code + " "
+        return info
 
-            req_string = req_string[:-1] + "]"
-            final_string += req_string
+    def reqs_to_string(self, req_list):
+        req_string = ""
 
-        return final_string
+        for req in req_list:
+            req_string += "[" + ", ".join(req.courses_string()) + "] "
+
+        return req_string
 
