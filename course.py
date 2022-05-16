@@ -15,7 +15,7 @@ class Course:
             info += "Prereqs: " + self.reqs_to_string(self.prereqs) + "\n"
 
         if self.coreqs:
-            info += "Coreqs: " + self.reqs_to_string(self.prereqs)
+            info += "Coreqs: " + self.reqs_to_string(self.coreqs)
 
         return info
 

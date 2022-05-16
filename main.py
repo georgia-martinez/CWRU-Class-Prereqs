@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import random
 from pyvis.network import Network
 
 from subject import *
@@ -8,6 +9,18 @@ from course import *
 from requirement import *
 
 all_subjects = dict()
+all_courses = dict()
+
+CODE_REGEX = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
+
+colors = {
+  "turquoise": "8cc9cf",
+  "blue": "739cc0",
+  "purple": "958ccf",
+  "pink": "c78ccf",
+  "red": "cf8c8c",
+  "green": "8ccfa5"
+}
 
 def create_subject_map():
     # Get all subjects
@@ -26,12 +39,9 @@ def create_subject_map():
 
         all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
 
-all_courses = dict()
-code_regex = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
-
 def new_course(course_input):
 
-    input_code = re.search(code_regex, course_input).group(0)
+    input_code = re.search(CODE_REGEX, course_input).group(0)
 
     # Check if course is already in the courses dictionary
     if input_code in all_courses:
@@ -51,7 +61,7 @@ def new_course(course_input):
     for tag in tags:
         course_header = tag.find("p", class_="courseblocktitle").find("strong").string
 
-        code = re.search(code_regex, course_header).group(0)
+        code = re.search(CODE_REGEX, course_header).group(0)
         code = code.replace("\xa0", " ")  # remove hard spaces
 
         if code == input_code:
@@ -95,7 +105,7 @@ def set_reqs(course):
     all_prereqs = []
 
     for req in prereqs:
-        courses = re.findall(code_regex, req)
+        courses = re.findall(CODE_REGEX, req)
 
         if courses:
             all_prereqs.append(courses)
@@ -111,12 +121,20 @@ def set_reqs(course):
 
         course.prereqs.append(req)
 
+def random_color():
+    key = random.choice(list(colors))
+    color = colors[key]
+
+    del colors[key]
+
+    return color
+
 def display_graph(root):
     net = Network("500px", "500px", directed=True)
 
     for key in all_courses:
         curr = all_courses[key]
-        net.add_node(key, title=curr.name)
+        net.add_node(key, title=curr.name, color="#FFFFFF")
         curr.visited = False
 
     stack = [root]
@@ -129,17 +147,23 @@ def display_graph(root):
             curr.visited = True
 
         for req in curr.prereqs:
+
+            if len(req.courses) == 1:
+                edge_color = "#cccccc"
+            else:
+                edge_color = random_color()
+
             for prereq in req.courses:
 
                 new_edge = {'from': prereq.code, 'to': curr.code, 'arrows': 'to'}
 
                 if new_edge not in net.edges:
-                    net.add_edge(prereq.code, curr.code)
+                    net.add_edge(prereq.code, curr.code, color=edge_color)
 
                 if not all_courses[prereq.code].visited:
                     stack.append(all_courses[prereq.code])
 
-    net.show("course_prereqs.html")
+    net.save_graph("course_prereqs.html")
 
 def main(string):
     create_subject_map()
@@ -150,4 +174,4 @@ def main(string):
     display_graph(course)
 
 if __name__ == "__main__":
-    main("MATH 319")
+    main("PHYS 221")
