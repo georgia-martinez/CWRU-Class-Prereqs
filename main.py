@@ -166,6 +166,39 @@ def display_graph(root):
 
     net.save_graph("course_prereqs.html")
 
+def add_node_click_code():
+    """
+    Adds code to the PyVis generated html file to make the nodes return info when clicked
+    """
+
+    html_file = "course_prereqs.html"
+    start_line = 0
+
+    LINE_BEFORE = "network = new vis.Network(container, data, options);"
+
+    # Find the correct spot to insert the new code
+    with open(html_file, "r") as f:
+        data = f.readlines()
+
+        for i in range(len(data)):
+            line = data[i]
+
+            if LINE_BEFORE in line:
+                start_line = i + 2 # Line to insert the new code
+                break
+
+    # Insert the new lines of code
+    with open(html_file, "w") as f:
+        code_to_insert = """
+
+        network.on("click", function (params) {
+            console.log(params.nodes[0]);
+        });
+        """
+
+        data.insert(start_line, code_to_insert)
+        f.writelines(data)
+
 def main(string):
     create_subject_map()
 
@@ -173,10 +206,11 @@ def main(string):
     print(course.to_string())
 
     display_graph(course)
+    add_node_click_code()
 
 # Setting up the parser
 parser = argparse.ArgumentParser(description="CWRU Prereq Visualizer")
-parser.add_argument("-c", "--course", type=str, metavar="", help="Name of a course (e.g. PHYS 122)")
+parser.add_argument("-c", "--course", type=str, default="PHYS 122", metavar="", help="Name of a course (e.g. PHYS 122)")
 args = parser.parse_args()
 
 if __name__ == "__main__":
