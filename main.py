@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import random
+import argparse
 from pyvis.network import Network
 
 from subject import *
@@ -173,5 +174,10 @@ def main(string):
 
     display_graph(course)
 
+# Setting up the parser
+parser = argparse.ArgumentParser(description="CWRU Prereq Visualizer")
+parser.add_argument("-c", "--course", type=str, metavar="", help="Name of a course (e.g. PHYS 122)")
+args = parser.parse_args()
+
 if __name__ == "__main__":
-    main("PHYS 221")
+    main(args.course)
