@@ -16,7 +16,7 @@ all_courses = dict()
 
 CODE_REGEX = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
 
-colors = {
+EDGE_COLORS = {
   "turquoise": "8cc9cf",
   "blue": "739cc0",
   "purple": "958ccf",
@@ -25,60 +25,43 @@ colors = {
   "green": "8ccfa5"
 }
 
-def new_course(course_input):
+used_edge_colors = EDGE_COLORS.copy()
 
-    input_code = re.search(CODE_REGEX, course_input).group(0)
+def get_course(code):
+    """
+    Given a course code, returns the corresponding Course object
 
-    # Check if course is already in the courses dictionary
-    if input_code in all_courses:
-        return all_courses[input_code]
+    @param code: (e.g. CSDS 132)
+    @return: Course object 
+    """
 
-    # Get all courses for a specific subject
-    subject = re.search("[A-Z]{4}", input_code).group(0)
+    # Check if course is already in the course dictionary
+    if code in all_courses:
+        return all_courses[code]
 
-    url = all_subjects[subject].courses_link
+    # Otherwise create a new course object
+    with open("course_data.json", "r") as json_file:
+        data = json.load(json_file)
 
-    result = requests.get(url)
-    doc = BeautifulSoup(result.text, "html.parser")
+        for i in range(len(data)):
+            course = data[i]
 
-    tags = doc.find_all("div", class_="courseblock")
+            if course["code"] == code:
+                break
+    
+    # Check if the course was found
+    if i == len(data) - 1 and code != data[-1]["code"]:
+        raise Exception(f"{code} does not exist")
 
-    # Try and find the course code on the site
-    for tag in tags:
-        course_header = tag.find("p", class_="courseblocktitle").find("strong").string
+    new_course = Course(course["name"], course["code"], course["credit hours"], course["description"])
 
-        code = re.search(CODE_REGEX, course_header).group(0)
-        code = code.replace("\xa0", " ")  # remove hard spaces
+    all_courses[code] = new_course
 
-        if code == input_code:
-            break
+    set_requirements(new_course)
 
-    if code != input_code:
-        print(f"ERROR: {input_code} not found")
-        return
+    return new_course
 
-    # Get course name, credit hours, and description
-    name = re.search("[A-Z][a-zA-Z\s\(\)\.]*\. ", course_header).group(0)
-    name = name[0:name.rindex(".")]
-
-    credit_hours = re.search("[0-9]{1} -? ?[0-9]?", course_header).group(0).replace(" ", "")
-
-    description = tag.find("p", class_="courseblockdesc").text
-
-    description = description.replace("EECS", "CSDS")
-    description = description.replace("\n", "")
-    description = description.replace("\xa0", " ") # remove hard spaces
-
-    # Add course to courses dictionary
-    course = Course(name, code, credit_hours, description)
-    all_courses[code] = course
-
-    # Set the prereqs
-    set_reqs(course)
-
-    return course
-
-def set_reqs(course):
+def set_requirements(course):
     desc = course.description
 
     req_regex = "[\sa-zA-Z0-9\(\)/]*"
@@ -100,7 +83,7 @@ def set_reqs(course):
         req = Requirement(Category.PREREQ)
 
         for prereq in group:
-            prereq_course = new_course(prereq)
+            prereq_course = get_course(prereq)
 
             if prereq_course not in req.courses:
                 req.courses.append(prereq_course)
@@ -108,10 +91,14 @@ def set_reqs(course):
         course.prereqs.append(req)
 
 def random_color():
-    key = random.choice(list(colors))
-    color = colors[key]
 
-    del colors[key]
+    if len(used_edge_colors) == 0:
+        raise Exception("Out of unique edge colors")
+
+    key = random.choice(list(used_edge_colors))
+    color = used_edge_colors[key]
+
+    del used_edge_colors[key]
 
     return color
 
@@ -184,46 +171,12 @@ def add_node_click_code():
         data.insert(start_line, code_to_insert)
         f.writelines(data)
 
-def get_course(code):
-    """
-    Given a course code, returns the corresponding Course object
-
-    @param code: (e.g. CSDS 132)
-    @return: Course object 
-    """
-
-    # Check if course is already in the course dictionary
-    if code in all_courses:
-        return all_courses[code]
-
-    # Otherwise create a new course object
-    with open("course_data.json", "r") as json_file:
-        data = json.load(json_file)
-
-        for i in range(len(data)):
-            course = data[i]
-
-            if course["code"] == code:
-                break
-    
-    # Check if the course was found
-    if i == len(data) - 1 and code != data[-1]["code"]:
-        raise Exception(f"{code} does not exist")
-
-    return Course(course["name"], course["code"], course["credit hours"], course["description"]) 
-
-def set_requirements():
-    pass
-
-def main(course_str="WLIT 651"):
+def main(course_str):
     root_course = get_course(course_str)
-    set_requirements(root_course)
+    print(root_course.to_string())
 
-def main2(string):
-    course = new_course(string)
-    print(course.to_string())
+    display_graph(root_course)
 
-    display_graph(course)
     add_node_click_code()
 
 # Setting up the parser
@@ -232,4 +185,4 @@ parser.add_argument("-c", "--course", type=str, default="PHYS 122", metavar="", 
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    main()
+    main(args.course)
