@@ -38,7 +38,9 @@ def create_subject_map():
         name = unicodedata.normalize("NFKD", name)
         code = unicodedata.normalize("NFKD", code)
 
-        all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
+        link = "https://bulletin.case.edu" + tag["href"]
+
+        all_subjects[code] = Subject(code, name, link)
 
     return all_subjects
 
@@ -105,7 +107,7 @@ def get_subject_courses(subject):
         description = tag.find("p", class_="courseblockdesc").text
 
         description = description.replace("EECS", "CSDS")
-        description = description.replace("\n", "")
+        description = description.replace("\n", " ")
         description = unicodedata.normalize("NFKD", description)
 
         course = Course(name, code, credit_hours, description)
@@ -115,14 +117,15 @@ def get_subject_courses(subject):
 
 def create_json_file():
     all_subjects = create_subject_map()
+    all_courses = []
 
     with open("course_data.json", "w") as json_file:
         for key in all_subjects:
             sub_courses = get_subject_courses(all_subjects[key])
+            all_courses.extend(sub_courses)
 
-            for course in sub_courses:
-                json_string = json.dumps(course, default=encoder_course, indent=4)
-                json_file.write(json_string)
+        json_string = json.dumps(all_courses, default=encoder_course, indent=4)
+        json_file.write(json_string)
 
 if __name__ == "__main__":
     create_json_file()

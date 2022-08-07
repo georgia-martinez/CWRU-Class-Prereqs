@@ -1,8 +1,10 @@
-from bs4 import BeautifulSoup
 import requests
 import re
 import random
 import argparse
+import json
+
+from bs4 import BeautifulSoup
 from pyvis.network import Network
 
 from subject import *
@@ -22,23 +24,6 @@ colors = {
   "red": "cf8c8c",
   "green": "8ccfa5"
 }
-
-def create_subject_map():
-    # Get all subjects
-    url = "https://bulletin.case.edu/course-descriptions/"
-
-    result = requests.get(url)
-    doc = BeautifulSoup(result.text, "html.parser")
-
-    tags = doc.find_all("a", href=re.compile("/course-descriptions/[a-z]{4}/"), text=re.compile("\(?[A-Z]{4}\)\s[a-zA-Z]+"))
-
-    for tag in tags:
-        text = tag.string
-
-        name = re.search(" [a-zA-z /]+", text).group(0)
-        code = re.search("[A-Z]{4}", text).group(0)
-
-        all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
 
 def new_course(course_input):
 
@@ -199,9 +184,42 @@ def add_node_click_code():
         data.insert(start_line, code_to_insert)
         f.writelines(data)
 
-def main(string):
-    create_subject_map()
+def get_course(code):
+    """
+    Given a course code, returns the corresponding Course object
 
+    @param code: (e.g. CSDS 132)
+    @return: Course object 
+    """
+
+    # Check if course is already in the course dictionary
+    if code in all_courses:
+        return all_courses[code]
+
+    # Otherwise create a new course object
+    with open("course_data.json", "r") as json_file:
+        data = json.load(json_file)
+
+        for i in range(len(data)):
+            course = data[i]
+
+            if course["code"] == code:
+                break
+    
+    # Check if the course was found
+    if i == len(data) - 1 and code != data[-1]["code"]:
+        raise Exception(f"{code} does not exist")
+
+    return Course(course["name"], course["code"], course["credit hours"], course["description"]) 
+
+def set_requirements():
+    pass
+
+def main(course_str="WLIT 651"):
+    root_course = get_course(course_str)
+    set_requirements(root_course)
+
+def main2(string):
     course = new_course(string)
     print(course.to_string())
 
@@ -214,4 +232,4 @@ parser.add_argument("-c", "--course", type=str, default="PHYS 122", metavar="", 
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    main(args.course)
+    main()
