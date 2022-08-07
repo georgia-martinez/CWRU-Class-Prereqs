@@ -1,31 +1,13 @@
-import requests
 import re
-import random
 import argparse
 import json
-
-from bs4 import BeautifulSoup
-from pyvis.network import Network
 
 from subject import *
 from course import *
 from requirement import *
+from course_graph import CourseGraph
 
-all_subjects = dict()
 all_courses = dict()
-
-CODE_REGEX = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
-
-EDGE_COLORS = {
-  "turquoise": "8cc9cf",
-  "blue": "739cc0",
-  "purple": "958ccf",
-  "pink": "c78ccf",
-  "red": "cf8c8c",
-  "green": "8ccfa5"
-}
-
-used_edge_colors = EDGE_COLORS.copy()
 
 def get_course(code):
     """
@@ -62,6 +44,12 @@ def get_course(code):
     return new_course
 
 def set_requirements(course):
+    """
+    Recursively sets the requirements for the given course and all of its prereqs
+
+    @param course: course to start with
+    """
+
     desc = course.description
 
     req_regex = "[\sa-zA-Z0-9\(\)/]*"
@@ -74,7 +62,7 @@ def set_requirements(course):
     all_prereqs = []
 
     for req in prereqs:
-        courses = re.findall(CODE_REGEX, req)
+        courses = re.findall("[A-Z]{4}\s[0-9]{3}[A-Z]?", req)
 
         if courses:
             all_prereqs.append(courses)
@@ -89,54 +77,6 @@ def set_requirements(course):
                 req.courses.append(prereq_course)
 
         course.prereqs.append(req)
-
-def random_color():
-
-    if len(used_edge_colors) == 0:
-        raise Exception("Out of unique edge colors")
-
-    key = random.choice(list(used_edge_colors))
-    color = used_edge_colors[key]
-
-    del used_edge_colors[key]
-
-    return color
-
-def display_graph(root):
-    net = Network("500px", "500px", directed=True)
-
-    for key in all_courses:
-        curr = all_courses[key]
-        net.add_node(key, title=curr.name, color="#FFFFFF")
-        curr.visited = False
-
-    stack = [root]
-
-    while stack:
-        curr = stack[-1]
-        stack.pop()
-
-        if not curr.visited:
-            curr.visited = True
-
-        for req in curr.prereqs:
-
-            if len(req.courses) == 1:
-                edge_color = "#cccccc"
-            else:
-                edge_color = random_color()
-
-            for prereq in req.courses:
-
-                new_edge = {'from': prereq.code, 'to': curr.code, 'arrows': 'to'}
-
-                if new_edge not in net.edges:
-                    net.add_edge(prereq.code, curr.code, color=edge_color)
-
-                if not all_courses[prereq.code].visited:
-                    stack.append(all_courses[prereq.code])
-
-    net.save_graph("course_prereqs.html")
 
 def add_node_click_code():
     """
@@ -171,11 +111,16 @@ def add_node_click_code():
         data.insert(start_line, code_to_insert)
         f.writelines(data)
 
-def main(course_str):
-    root_course = get_course(course_str)
+def new_course_graph(input_course):
+    """
+    Main method that does like everything
+    """
+
+    root_course = get_course(input_course)
     print(root_course.to_string())
 
-    display_graph(root_course)
+    course_graph = CourseGraph(all_courses)
+    course_graph.create_graph(root_course)
 
     add_node_click_code()
 
@@ -185,4 +130,4 @@ parser.add_argument("-c", "--course", type=str, default="PHYS 122", metavar="", 
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    main(args.course)
+    new_course_graph(args.course)

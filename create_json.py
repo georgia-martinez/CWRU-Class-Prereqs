@@ -1,5 +1,5 @@
 """
-Creates a JSON file with all CWRU courses from every subject
+Creates a JSON file with all CWRU courses. The JSON file stores the course code, name, number of credit hours, and the course description.
 """
 
 import requests
@@ -14,9 +14,11 @@ from requirement import *
 
 CODE_REGEX = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
 
-def create_subject_map():
+def subject_dictionary():
     """
+    Parses through the CWRU course bulletin and creates a dictionary with all the different subjects (e.g. ACCT, CSDS, MATH. Course bulletin link (as of August 2022): "https://bulletin.case.edu/course-descriptions/"
 
+    @return: dictionary with all subjects
     """
 
     all_subjects = dict()
@@ -64,7 +66,10 @@ def encoder_course(course):
 
 def get_subject_courses(subject):
     """
-    
+    Parses the course bulletin of the specified subject and returns a list of course objects
+
+    @param subject: e.g. ENGR or USSY
+    @return: list of course objects from the given subject
     """
 
     print(subject.code)
@@ -116,7 +121,11 @@ def get_subject_courses(subject):
     return courses
 
 def create_json_file():
-    all_subjects = create_subject_map()
+    """
+    Creates a JSON file with all the course data
+    """
+
+    all_subjects = subject_dictionary()
     all_courses = []
 
     with open("course_data.json", "w") as json_file:
