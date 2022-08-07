@@ -5,6 +5,7 @@ Creates a JSON file with all CWRU courses from every subject
 import requests
 import re
 import json
+import unicodedata
 
 from bs4 import BeautifulSoup
 from subject import *
@@ -34,10 +35,13 @@ def create_subject_map():
         name = re.search(" [a-zA-z /]+", text).group(0)
         code = re.search("[A-Z]{4}", text).group(0)
 
+        name = unicodedata.normalize("NFKD", name)
+        code = unicodedata.normalize("NFKD", code)
+
         all_subjects[code] = Subject(code, name, "https://bulletin.case.edu" + tag["href"])
 
     return all_subjects
-    
+
 def encoder_course(course):
     """
     Returns a JSON encoded version of the given course
@@ -73,21 +77,23 @@ def get_subject_courses(subject):
     courses = []
 
     for tag in tags:
-        course_header = tag.find("p", class_="courseblocktitle").find("strong").string
+        header = tag.find("p", class_="courseblocktitle").find("strong").get_text(strip=True)
+        header = unicodedata.normalize("NFKD", header)
 
-        course_header.replace("\xa0", " ") # remove hard spaces
+        # Get the course code
+        code = header[0:header.find(".")]
 
-        course_header.replace("Unit.", "")
-        course_header.replace("Units.", "")
+        # Get the credit hours
+        header = header.replace(code, "")
 
-        code = course_header[0:course_header.find(".")]
+        credit_hours = re.search("[0-9].? ?-? ?[0-9]?[0-9]? Units?\.", header).group(0)
+        credit_hours = credit_hours[0:credit_hours.find("U")].strip()
 
-        # code = re.search("[A-Z]{4}\s[0-9]{3}[0-9]?[A-Z]?", course_header).group(0)
-        credit_hours = re.search("[0-9]{1} -? ?.?[0-9]?", course_header).group(0).replace(" ", "")
+        header = header.replace("Unit.", "")
+        header = header.replace("Units.", "") 
 
-        name = course_header.replace(code, "") # can't find code if hard spaces are removed before
-        name = name.replace(credit_hours, "")
-
+        # Get the course name
+        name = header.replace(credit_hours, "")
         name = re.search("[A-Z][a-zA-Z0-9-\s':,?/&+\(\)\.]*\.?", name).group(0)
         
         last_idx = name.rfind(".")
@@ -95,13 +101,12 @@ def get_subject_courses(subject):
         if last_idx != -1:
             name = name[0:last_idx]
         
-        name = re.sub(" *[0-9] ", "", name)
-
+        # Get the description
         description = tag.find("p", class_="courseblockdesc").text
 
         description = description.replace("EECS", "CSDS")
         description = description.replace("\n", "")
-        description = description.replace("\xa0", " ") # remove hard spaces
+        description = unicodedata.normalize("NFKD", description)
 
         course = Course(name, code, credit_hours, description)
         courses.append(course)
