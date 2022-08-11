@@ -8,7 +8,7 @@ class Course:
         self.coreqs = []
         self.visited = False
 
-    def to_string(self):
+    def __str__(self):
         info = f"{self.code}: {self.name} ({self.credit_hours} units)\n{self.description}\n"
 
         if self.prereqs:

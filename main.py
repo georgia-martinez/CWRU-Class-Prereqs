@@ -25,9 +25,7 @@ def get_course(code):
     with open("course_data.json", "r") as json_file:
         data = json.load(json_file)
 
-        for i in range(len(data)):
-            course = data[i]
-
+        for i, course in enumerate(data):
             if course["code"] == code:
                 break
     
@@ -117,7 +115,7 @@ def new_course_graph(input_course):
     """
 
     root_course = get_course(input_course)
-    print(root_course.to_string())
+    print(root_course.__str__())
 
     course_graph = CourseGraph(all_courses)
     course_graph.create_graph(root_course)

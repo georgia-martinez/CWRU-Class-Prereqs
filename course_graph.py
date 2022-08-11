@@ -31,7 +31,7 @@ class CourseGraph():
 
         net = Network("500px", "500px", directed=True)
 
-        edge_colors = {
+        self.edge_colors = {
             "turquoise": "8cc9cf",
             "blue": "739cc0",
             "purple": "958ccf",
@@ -71,4 +71,4 @@ class CourseGraph():
                     if not self.course_dict[prereq.code].visited:
                         stack.append(self.course_dict[prereq.code])
 
-        net.save_graph("course_prereqs.html")
+        net.save_graph("front_end/course_prereqs.html")
