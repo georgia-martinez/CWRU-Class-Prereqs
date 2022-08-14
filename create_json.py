@@ -10,7 +10,7 @@ import unicodedata
 from bs4 import BeautifulSoup
 from subject import *
 from course import *
-from requirement import *
+from req import *
 
 CODE_REGEX = "[A-Z]{4}\s[0-9]{3}[A-Z]?"
 
@@ -128,7 +128,7 @@ def create_json_file():
     all_subjects = subject_dictionary()
     all_courses = []
 
-    with open("course_data.json", "w") as json_file:
+    with open("templates/course_data.json", "w") as json_file:
         for key in all_subjects:
             sub_courses = get_subject_courses(all_subjects[key])
             all_courses.extend(sub_courses)

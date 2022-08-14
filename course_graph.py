@@ -71,4 +71,4 @@ class CourseGraph():
                     if not self.course_dict[prereq.code].visited:
                         stack.append(self.course_dict[prereq.code])
 
-        net.save_graph("front_end/course_prereqs.html")
+        net.save_graph("templates/course_map.html")

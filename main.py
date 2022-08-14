@@ -4,7 +4,7 @@ import json
 
 from subject import *
 from course import *
-from requirement import *
+from req import *
 from course_graph import CourseGraph
 
 all_courses = dict()
@@ -81,7 +81,7 @@ def add_node_click_code():
     Adds code to the PyVis generated html file to make the nodes return info when clicked
     """
 
-    html_file = "course_prereqs.html"
+    html_file = "templates/course_map.html"
     start_line = 0
 
     LINE_BEFORE = "network = new vis.Network(container, data, options);"
@@ -121,6 +121,9 @@ def new_course_graph(input_course):
     course_graph.create_graph(root_course)
 
     add_node_click_code()
+
+def testing_pyscript():
+    print("IT WORKED!")
 
 # Setting up the parser
 parser = argparse.ArgumentParser(description="CWRU Prereq Visualizer")
